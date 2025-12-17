@@ -34,10 +34,16 @@ export default function Home() {
       )
 
       const json = await res.json()
+
+      if (!json || !json.account) {
+        throw new Error('Données API invalides')
+      }
+
       setData(json)
       setError(null)
     } catch {
       setError('Erreur lors du chargement des statistiques')
+      setData(null)
     } finally {
       setLoading(false)
     }
@@ -53,7 +59,7 @@ export default function Home() {
   const modes = data?.global_stats
 
   return (
-    <VStack p={8} spacing={10} align="stretch">
+    <VStack p={8} gap={10} align="stretch">
       <Heading>Fortnite – Live Stats</Heading>
 
       {!isAuthenticated && (
@@ -63,64 +69,68 @@ export default function Home() {
       {loading && <Text>Chargement…</Text>}
       {error && <Text color="red.400">{error}</Text>}
 
-      {data && (
+      {data?.account && (
         <>
           {/* PROFIL */}
           <Box>
-            <Heading size="md">{data.name}</Heading>
-            <Text>Saison actuelle : {data.account.season}</Text>
-            <Text>Niveau actuel : {data.account.level}</Text>
+            <Heading size="md">{data.name ?? 'Joueur inconnu'}</Heading>
+            <Text>Saison actuelle : {data.account.season ?? '—'}</Text>
+            <Text>Niveau actuel : {data.account.level ?? '—'}</Text>
           </Box>
 
           {/* STATS PAR MODE */}
-          <SimpleGrid columns={[1, 2, 2, 4]} spacing={6}>
-            {Object.entries(modes).map(([mode, s]: any) => (
-              <Box
-                key={mode}
-                border="1px solid"
-                borderColor="gray.600"
-                p={4}
-                borderRadius="md"
-              >
-                <Heading size="sm" mb={2} textTransform="uppercase">
-                  {mode}
-                </Heading>
-
-                <Text>Matches : {s.matchesplayed}</Text>
-                <Text>Kills : {s.kills}</Text>
-                <Text>Wins : {s.placetop1}</Text>
-                <Text>K/D : {s.kd.toFixed(2)}</Text>
-                <Text>
-                  Winrate : {(s.winrate * 100).toFixed(1)}%
-                </Text>
-              </Box>
-            ))}
-          </SimpleGrid>
-
-          {/* SAISONS */}
-          <Box>
-            <Heading size="md" mb={4}>
-              Historique des saisons
-            </Heading>
-
-            <SimpleGrid columns={[1, 2, 3]} spacing={4}>
-              {data.accountLevelHistory.map((s: any) => (
+          {modes && (
+            <SimpleGrid columns={[1, 2, 2, 4]} gap={6}>
+              {Object.entries(modes).map(([mode, s]: any) => (
                 <Box
-                  key={s.season}
+                  key={mode}
                   border="1px solid"
                   borderColor="gray.600"
-                  p={3}
+                  p={4}
                   borderRadius="md"
                 >
-                  <Text fontWeight="bold">
-                    Saison {s.season}
+                  <Heading size="sm" mb={2} textTransform="uppercase">
+                    {mode}
+                  </Heading>
+
+                  <Text>Matches : {s.matchesplayed ?? 0}</Text>
+                  <Text>Kills : {s.kills ?? 0}</Text>
+                  <Text>Wins : {s.placetop1 ?? 0}</Text>
+                  <Text>K/D : {s.kd?.toFixed(2) ?? '0.00'}</Text>
+                  <Text>
+                    Winrate : {((s.winrate ?? 0) * 100).toFixed(1)}%
                   </Text>
-                  <Text>Niveau : {s.level}</Text>
-                  <Text>Progression : {s.process_pct}%</Text>
                 </Box>
               ))}
             </SimpleGrid>
-          </Box>
+          )}
+
+          {/* SAISONS */}
+          {data.accountLevelHistory && (
+            <Box>
+              <Heading size="md" mb={4}>
+                Historique des saisons
+              </Heading>
+
+              <SimpleGrid columns={[1, 2, 3]} gap={4}>
+                {data.accountLevelHistory.map((s: any) => (
+                  <Box
+                    key={s.season}
+                    border="1px solid"
+                    borderColor="gray.600"
+                    p={3}
+                    borderRadius="md"
+                  >
+                    <Text fontWeight="bold">
+                      Saison {s.season}
+                    </Text>
+                    <Text>Niveau : {s.level}</Text>
+                    <Text>Progression : {s.process_pct}%</Text>
+                  </Box>
+                ))}
+              </SimpleGrid>
+            </Box>
+          )}
         </>
       )}
     </VStack>
